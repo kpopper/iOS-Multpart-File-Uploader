@@ -28,4 +28,4 @@ Pass a the URL for a locally-stored file to the uploader. Optionally set a deleg
 To do:
 ======
 
-1) Find a way to only upload the parts of the file that are outstanding
+  1. Find a way to only upload the parts of the file that are outstanding
