@@ -3,10 +3,10 @@ MultipartUpload uses an operation queue to chunk up and upload all pieces of a l
 Prerequisites
 =============
 
-1) Reachability - The best version to use is this one: [https://github.com/tonymillion/Reachability](https://github.com/tonymillion/Reachability)
-1) AWSiOSSDK.framework - Part of the AWS iOS SDK download: [http://aws.amazon.com/sdkforios/](http://aws.amazon.com/sdkforios/)
-1) SystemConfiguration.framework - Part of the standard iOS SDK
-1) An AWS S3 account
+  1. Reachability - The best version to use is this one: [https://github.com/tonymillion/Reachability](https://github.com/tonymillion/Reachability)
+  1. AWSiOSSDK.framework - Part of the AWS iOS SDK download: [http://aws.amazon.com/sdkforios/](http://aws.amazon.com/sdkforios/)
+  1. SystemConfiguration.framework - Part of the standard iOS SDK
+  1. An AWS S3 account
 
 Usage
 =====
