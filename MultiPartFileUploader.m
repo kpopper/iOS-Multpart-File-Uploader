@@ -52,6 +52,20 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
 
 - (BOOL)uploadFileAtUrl:(NSURL *)filePathUrl operationQueue:(NSOperationQueue *)queue delegate:(id<MultiPartFileUploaderDelegate>)delegate
 {
+    NSData *fileData = [NSData dataWithContentsOfURL:filePathUrl];
+    int numberOfParts = [self countParts:fileData];
+    
+    NSMutableSet *parts = [NSMutableSet setWithCapacity:numberOfParts];
+    for ( NSInteger part = 1; part <= numberOfParts; part++ ) 
+    {
+        [parts addObject:[NSNumber numberWithInteger:part]];
+    }
+    
+    return [self uploadFileAtUrl:filePathUrl outstandingParts:parts operationQueue:queue delegate:delegate];
+}
+
+- (BOOL)uploadFileAtUrl:(NSURL *)filePathUrl outstandingParts:(NSSet *)outstandingParts operationQueue:(NSOperationQueue *)queue delegate:(id<MultiPartFileUploaderDelegate>)delegate
+{
     if (!queue) 
     {
         return NO;
@@ -60,6 +74,7 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
     [self setQueue:queue];
     [self setDelegate:delegate];
     [self setFilePathUrl:filePathUrl];
+    [self setOutstandingParts:[NSMutableSet setWithSet:outstandingParts]];
     
     NSData *fileData = [NSData dataWithContentsOfURL:filePathUrl];
     NSString *fileName = [filePathUrl lastPathComponent];
@@ -70,13 +85,11 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
         S3MultipartUpload *upload = [[[self s3] initiateMultipartUpload:initReq] multipartUpload];
         [self setCompReq:[[[S3CompleteMultipartUploadRequest alloc] initWithMultipartUpload:upload] autorelease]];
         
-        int numberOfParts = [self countParts:fileData];
-        [self setOutstandingParts:[NSMutableSet setWithCapacity:numberOfParts]];
-        
-        for ( NSInteger part = 1; part <= numberOfParts; part++ ) 
+        for (NSNumber *partNumber in [self outstandingParts]) 
         {
+            NSInteger part = [partNumber integerValue];
+
             NSData *dataForPart = [self getPart:part fromData:fileData];
-            [[self outstandingParts] addObject:[NSNumber numberWithInteger:part]];
             
             PartUploadTask *task = [[[PartUploadTask alloc] initWithPartNumber:part 
                                                                   dataToUpload:dataForPart 
@@ -95,7 +108,7 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
     {
         NSLog( @"General fail: %@", exception );
     }
-
+    
     return YES;
 }
 

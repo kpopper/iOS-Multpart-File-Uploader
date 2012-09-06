@@ -18,6 +18,7 @@
 		3C1DFCBE15F52278002E55D8 /* ViewController_iPad.xib in Resources */ = {isa = PBXBuildFile; fileRef = 3C1DFCBC15F52278002E55D8 /* ViewController_iPad.xib */; };
 		3C1DFCC615F5229B002E55D8 /* MultiPartFileUploader.m in Sources */ = {isa = PBXBuildFile; fileRef = 3C1DFCC515F5229B002E55D8 /* MultiPartFileUploader.m */; };
 		3C1DFCC815F52395002E55D8 /* AWSiOSSDK.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3C1DFCC715F52395002E55D8 /* AWSiOSSDK.framework */; };
+		3CA7093D15F8DD5900C9EA29 /* Readme.md in Resources */ = {isa = PBXBuildFile; fileRef = 3CA7093C15F8DD5900C9EA29 /* Readme.md */; };
 		3CF0833415F6130F00552B5A /* PartUploadTask.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CF0833315F6130F00552B5A /* PartUploadTask.m */; };
 		3CF0833815F651DF00552B5A /* Reachability.m in Sources */ = {isa = PBXBuildFile; fileRef = 3CF0833715F651DF00552B5A /* Reachability.m */; };
 		3CF0833F15F6554500552B5A /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3CF0833E15F6554500552B5A /* SystemConfiguration.framework */; };
@@ -41,6 +42,7 @@
 		3C1DFCC415F5229B002E55D8 /* MultiPartFileUploader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MultiPartFileUploader.h; path = ../../MultiPartFileUploader.h; sourceTree = "<group>"; };
 		3C1DFCC515F5229B002E55D8 /* MultiPartFileUploader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = MultiPartFileUploader.m; path = ../../MultiPartFileUploader.m; sourceTree = "<group>"; };
 		3C1DFCC715F52395002E55D8 /* AWSiOSSDK.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = AWSiOSSDK.framework; sourceTree = "<group>"; };
+		3CA7093C15F8DD5900C9EA29 /* Readme.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = Readme.md; path = ../../Readme.md; sourceTree = "<group>"; };
 		3CF0833215F6130F00552B5A /* PartUploadTask.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PartUploadTask.h; path = ../../PartUploadTask.h; sourceTree = "<group>"; };
 		3CF0833315F6130F00552B5A /* PartUploadTask.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = PartUploadTask.m; path = ../../PartUploadTask.m; sourceTree = "<group>"; };
 		3CF0833615F651DF00552B5A /* Reachability.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Reachability.h; sourceTree = "<group>"; };
@@ -115,6 +117,7 @@
 		3C1DFCAB15F52278002E55D8 /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
+				3CA7093C15F8DD5900C9EA29 /* Readme.md */,
 				3C1DFCAC15F52278002E55D8 /* TestMultipartUpload-Info.plist */,
 				3C1DFCAD15F52278002E55D8 /* InfoPlist.strings */,
 				3C1DFCB015F52278002E55D8 /* main.m */,
@@ -186,6 +189,7 @@
 				3C1DFCAF15F52278002E55D8 /* InfoPlist.strings in Resources */,
 				3C1DFCBB15F52278002E55D8 /* ViewController_iPhone.xib in Resources */,
 				3C1DFCBE15F52278002E55D8 /* ViewController_iPad.xib in Resources */,
+				3CA7093D15F8DD5900C9EA29 /* Readme.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -32,6 +32,22 @@
 
 - (id)initWithS3Key:(NSString *)s3Key secret:(NSString *)s3Secret bucket:(NSString *)s3Bucket;
 
+/**
+ Upload an entire file in chunks to the given S3 bucket
+ @param filePathUrl The local path URL to the file in the phone's document store
+ @param queue Your application's operation queue to be used to upload the files
+ @param delegate An optional delegate to receive progress updates from the upload
+ @returns YES if parts are successfully queued, NO if arguments are incorrect or there are problems connecting to S3
+ */
 - (BOOL)uploadFileAtUrl:(NSURL *)filePathUrl operationQueue:(NSOperationQueue *)queue delegate:(id<MultiPartFileUploaderDelegate>)delegate;
+
+/**
+ Upload an entire file in chunks to the given S3 bucket
+ @param filePathUrl The local path URL to the file in the phone's document store
+ @param outstandingParts A set of NSNumber objects with the parts that still need to be uploaded (1-based index)
+ @param queue Your application's operation queue to be used to upload the files
+ @param delegate An optional delegate to receive progress updates from the upload
+ */
+- (BOOL)uploadFileAtUrl:(NSURL *)filePathUrl outstandingParts:(NSSet *)outstandingParts operationQueue:(NSOperationQueue *)queue delegate:(id<MultiPartFileUploaderDelegate>)delegate;
 
 @end
