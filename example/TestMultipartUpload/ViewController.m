@@ -82,9 +82,9 @@
     NSLog(@"File uploader did upload part number: %d and got back etag: %@", partNumber, etag);
 }
 
-- (void)fileUploaderDidFinishUploadingFile:(MultiPartFileUploader *)uploader
+- (void)fileUploader:(MultiPartFileUploader *)uploader didFinishUploadingFileTo:(NSString *)destinationPath
 {
-    NSLog(@"File uploader has finished uploading all parts");
+    NSLog(@"File uploader has finished uploading all parts to %@", destinationPath);
 }
 
 @end

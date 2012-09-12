@@ -16,21 +16,11 @@
 - (void)fileUploaderDidFailToUploadFile:(MultiPartFileUploader *)uploader;
 - (void)fileUploader:(MultiPartFileUploader *)uploader didStartUploadingFileWithNumberOfParts:(NSInteger)numberOfParts;
 - (void)fileUploader:(MultiPartFileUploader *)uploader didUploadPartNumber:(NSInteger)partNumber etag:(NSString *)etag;
-- (void)fileUploaderDidFinishUploadingFile:(MultiPartFileUploader *)uploader;
+- (void)fileUploader:(MultiPartFileUploader *)uploader didFinishUploadingFileTo:(NSString *)destinationPath;
 @end
 
 
 @interface MultiPartFileUploader : NSObject <AmazonServiceRequestDelegate>
-
-@property (nonatomic, copy) NSString *s3Key;
-@property (nonatomic, copy) NSString *s3Secret;
-@property (nonatomic, copy) NSString *s3Bucket;
-@property (nonatomic, assign) id<MultiPartFileUploaderDelegate> delegate;
-@property (nonatomic, assign) NSURL *filePathUrl;
-@property (nonatomic, retain) AmazonS3Client *s3;
-@property (nonatomic, retain) S3CompleteMultipartUploadRequest *compReq;
-@property (nonatomic, retain) NSOperationQueue *queue;
-@property (nonatomic, retain) NSMutableSet *outstandingParts;
 
 - (id)initWithS3Key:(NSString *)s3Key secret:(NSString *)s3Secret bucket:(NSString *)s3Bucket;
 

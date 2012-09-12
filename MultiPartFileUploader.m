@@ -9,6 +9,18 @@
 #import "MultiPartFileUploader.h"
 #import "PartUploadTask.h"
 
+@interface MultiPartFileUploader ()
+@property (nonatomic, copy) NSString *s3Key;
+@property (nonatomic, copy) NSString *s3Secret;
+@property (nonatomic, copy) NSString *s3Bucket;
+@property (nonatomic, assign) id<MultiPartFileUploaderDelegate> delegate;
+@property (nonatomic, retain) AmazonS3Client *s3;
+@property (nonatomic, retain) S3MultipartUpload *upload;
+@property (nonatomic, retain) S3CompleteMultipartUploadRequest *compReq;
+@property (nonatomic, retain) NSOperationQueue *queue;
+@property (nonatomic, retain) NSMutableSet *outstandingParts;
+@end
+
 @implementation MultiPartFileUploader
 
 const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowed for a multipart upload. (Only the last part can be smaller.)
@@ -17,8 +29,8 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
 @synthesize s3Secret=_s3Secret;
 @synthesize s3Bucket=_s3Bucket;
 @synthesize delegate=_delegate;
-@synthesize filePathUrl=_filePathUrl;
 @synthesize s3=_s3;
+@synthesize upload=_upload;
 @synthesize compReq=_compReq;
 @synthesize queue=_queue;
 @synthesize outstandingParts=_outstandingParts;
@@ -40,13 +52,13 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
 {
     _delegate = nil;
     [_s3 release];
+    [_upload release];
     [_compReq release];
     [_queue cancelAllOperations];
     [_queue release];
     [_s3Key release];
     [_s3Secret release];
     [_s3Bucket release];
-    [_filePathUrl release];
     [super dealloc];
 }
 
@@ -78,17 +90,15 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
     
     [self setQueue:queue];
     [self setDelegate:delegate];
-    [self setFilePathUrl:filePathUrl];
     [self setOutstandingParts:[NSMutableSet setWithSet:outstandingParts]];
     
     NSData *fileData = [NSData dataWithContentsOfURL:filePathUrl];
-    NSString *fileName = [filePathUrl lastPathComponent];
     
     @try 
     {
-        S3InitiateMultipartUploadRequest *initReq = [[[S3InitiateMultipartUploadRequest alloc] initWithKey:fileName inBucket:[self s3Bucket]] autorelease];
-        S3MultipartUpload *upload = [[[self s3] initiateMultipartUpload:initReq] multipartUpload];
-        [self setCompReq:[[[S3CompleteMultipartUploadRequest alloc] initWithMultipartUpload:upload] autorelease]];
+        S3InitiateMultipartUploadRequest *initReq = [[[S3InitiateMultipartUploadRequest alloc] initWithKey:[self fileKeyOnS3:[filePathUrl relativePath]] inBucket:[self s3Bucket]] autorelease];
+        [self setUpload:[[[self s3] initiateMultipartUpload:initReq] multipartUpload]];
+        [self setCompReq:[[[S3CompleteMultipartUploadRequest alloc] initWithMultipartUpload:[self upload]] autorelease]];
         
         for (NSNumber *partNumber in [self outstandingParts]) 
         {
@@ -99,7 +109,7 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
             PartUploadTask *task = [[[PartUploadTask alloc] initWithPartNumber:part 
                                                                   dataToUpload:dataForPart 
                                                                       s3Client:[self s3] 
-                                                             s3MultipartUpload:upload] autorelease];
+                                                             s3MultipartUpload:[self upload]] autorelease];
             [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(completePartUpload:) name:kPartDidFinishUploadingNotification object:task];
             [[self queue] addOperation:task];
         }
@@ -136,9 +146,9 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
     {
         [[self s3] completeMultipartUpload:[self compReq]];
 
-        if( [self delegate] && [[self delegate] respondsToSelector:@selector(fileUploaderDidFinishUploadingFile:)] )
+        if( [self delegate] && [[self delegate] respondsToSelector:@selector(fileUploader:didFinishUploadingFileTo:)] )
         {
-            [[self delegate] fileUploaderDidFinishUploadingFile:self];
+            [[self delegate] fileUploader:self didFinishUploadingFileTo:[[self upload] key]];
         }
     }
 
@@ -164,6 +174,11 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
     int r = (int)([fullData length] % PART_SIZE);
     
     return ( r == 0 ) ? q : q + 1;
+}
+
+- (NSString *)fileKeyOnS3:(NSString *)filePath
+{
+    return [@"direct_uploads" stringByAppendingPathComponent:filePath];
 }
 
 @end
