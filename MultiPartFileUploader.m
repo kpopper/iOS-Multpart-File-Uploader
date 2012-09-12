@@ -130,6 +130,11 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
     if( [[self outstandingParts] count] == 0 )
     {
         [[self s3] completeMultipartUpload:[self compReq]];
+
+        if( [self delegate] && [[self delegate] respondsToSelector:@selector(fileUploaderDidFinishUploadingFile:)] )
+        {
+            [[self delegate] fileUploaderDidFinishUploadingFile:self];
+        }
     }
 
 }
