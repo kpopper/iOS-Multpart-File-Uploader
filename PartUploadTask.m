@@ -38,8 +38,6 @@
         return;
     }
 
-    NSLog(@"Operation started.");
-        
     bool using3G = ![self isWifiAvailable];
     
     S3UploadInputStream *stream = [S3UploadInputStream inputStreamWithData:[self data]];        
@@ -61,8 +59,6 @@
     [userInfo setObject:response.etag forKey:@"etag"];
     [[NSNotificationCenter defaultCenter] postNotificationName:kPartDidFinishUploadingNotification object:self userInfo:userInfo];
     
-    NSLog(@"Operation finished.");
-
 }
 
 -(BOOL)isWifiAvailable 
