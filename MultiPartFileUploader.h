@@ -22,6 +22,18 @@
 
 @interface MultiPartFileUploader : NSObject <AmazonServiceRequestDelegate>
 
+/**
+ Location of file being uploaded on local machine
+ */
+@property (nonatomic, retain) NSURL *filePathUrl;
+
+/**
+ Create an instance of an uploader with S3 credentials
+ @param s3Key The Access Key Id for your S3 account
+ @param s3Secret The Secret Access Key for your S3 account
+ @param s3Bucket The S3 bucket you want to use to store your file
+ @returns a new instance of MultiPartFileUploader
+ */
 - (id)initWithS3Key:(NSString *)s3Key secret:(NSString *)s3Secret bucket:(NSString *)s3Bucket;
 
 /**
@@ -39,6 +51,7 @@
  @param outstandingParts A set of NSNumber objects with the parts that still need to be uploaded (1-based index)
  @param queue Your application's operation queue to be used to upload the files
  @param delegate An optional delegate to receive progress updates from the upload
+ @returns YES if parts are successfully queued, NO if arguments are incorrect or there are problems connecting to S3
  */
 - (BOOL)uploadFileAtUrl:(NSURL *)filePathUrl outstandingParts:(NSSet *)outstandingParts operationQueue:(NSOperationQueue *)queue delegate:(id<MultiPartFileUploaderDelegate>)delegate;
 

@@ -7,6 +7,7 @@
 //
 
 #import "ViewController.h"
+#import "MultiPartFileUploader.h"
 
 @interface ViewController ()
 {
@@ -19,15 +20,15 @@
 
 @implementation ViewController
 
-@synthesize uploader;
-@synthesize queue;
-@synthesize urlField;
+@synthesize uploader=_uploader;
+@synthesize queue=_queue;
+@synthesize urlField=_urlField;
 
 - (void)dealloc
 {
-    [uploader release];
-    [queue release];
-    [urlField release];
+    [_uploader release];
+    [_queue release];
+    [_urlField release];
     [super dealloc];
 }
 
@@ -54,6 +55,7 @@
 {
     [super viewDidUnload];
     // Release any retained subviews of the main view.
+    [self setUrlField:nil];
 }
 
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
@@ -67,24 +69,24 @@
 
 - (IBAction)upload:(id)sender
 {
-    NSString *urlString = [[self urlField] text];
+    NSString *urlString = [self.urlField text];
     NSURL *url = [NSURL fileURLWithPath:urlString];
-    [self.uploader uploadFileAtUrl:url operationQueue:[self queue] delegate:self];
+    [self.uploader uploadFileAtUrl:url operationQueue:self.queue delegate:self];
 }
 
 - (void)fileUploader:(MultiPartFileUploader *)uploader didStartUploadingFileWithNumberOfParts:(NSInteger)numberOfParts
 {
-    NSLog(@"File uploader has split file into %d parts", numberOfParts);
+    NSLog(@"Uploader has split file '%@' into %d parts", uploader.filePathUrl, numberOfParts);
 }
 
 - (void)fileUploader:(MultiPartFileUploader *)uploader didUploadPartNumber:(NSInteger)partNumber etag:(NSString *)etag
 {
-    NSLog(@"File uploader did upload part number: %d and got back etag: %@", partNumber, etag);
+    NSLog(@"Uploader did upload part number %d of file '%@' and got back etag: %@", partNumber, uploader.filePathUrl, etag);
 }
 
 - (void)fileUploader:(MultiPartFileUploader *)uploader didFinishUploadingFileTo:(NSString *)destinationPath
 {
-    NSLog(@"File uploader has finished uploading all parts to %@", destinationPath);
+    NSLog(@"Uploader has finished uploading file '%@' to %@", uploader.filePathUrl, destinationPath);
 }
 
 @end

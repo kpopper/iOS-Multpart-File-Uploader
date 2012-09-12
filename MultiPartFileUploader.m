@@ -34,6 +34,7 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
 @synthesize compReq=_compReq;
 @synthesize queue=_queue;
 @synthesize outstandingParts=_outstandingParts;
+@synthesize filePathUrl=_filePathUrl;
 
 - (id)initWithS3Key:(NSString *)s3Key secret:(NSString *)s3Secret bucket:(NSString *)s3Bucket
 {
@@ -59,11 +60,14 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
     [_s3Key release];
     [_s3Secret release];
     [_s3Bucket release];
+    [_filePathUrl release];
     [super dealloc];
 }
 
 - (BOOL)uploadFileAtUrl:(NSURL *)filePathUrl operationQueue:(NSOperationQueue *)queue delegate:(id<MultiPartFileUploaderDelegate>)delegate
 {
+    [self setFilePathUrl:filePathUrl];
+    
     NSData *fileData = [NSData dataWithContentsOfURL:filePathUrl];
     int numberOfParts = [self countParts:fileData];
     
@@ -88,15 +92,17 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
         return NO;
     }
     
+    [self setFilePathUrl:filePathUrl];
     [self setQueue:queue];
     [self setDelegate:delegate];
     [self setOutstandingParts:[NSMutableSet setWithSet:outstandingParts]];
     
-    NSData *fileData = [NSData dataWithContentsOfURL:filePathUrl];
+    NSData *fileData = [NSData dataWithContentsOfURL:[self filePathUrl]];
     
     @try 
     {
-        S3InitiateMultipartUploadRequest *initReq = [[[S3InitiateMultipartUploadRequest alloc] initWithKey:[self fileKeyOnS3:[filePathUrl relativePath]] inBucket:[self s3Bucket]] autorelease];
+        NSString *keyOnS3 = [self fileKeyOnS3:[[self filePathUrl] relativePath]];
+        S3InitiateMultipartUploadRequest *initReq = [[[S3InitiateMultipartUploadRequest alloc] initWithKey:keyOnS3 inBucket:[self s3Bucket]] autorelease];
         [self setUpload:[[[self s3] initiateMultipartUpload:initReq] multipartUpload]];
         [self setCompReq:[[[S3CompleteMultipartUploadRequest alloc] initWithMultipartUpload:[self upload]] autorelease]];
         
