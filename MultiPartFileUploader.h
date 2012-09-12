@@ -14,6 +14,7 @@
 @protocol MultiPartFileUploaderDelegate <NSObject>
 @optional
 - (void)fileUploaderDidFailToUploadFile:(MultiPartFileUploader *)uploader;
+- (void)fileUploader:(MultiPartFileUploader *)uploader didStartUploadingFileWithNumberOfParts:(NSInteger)numberOfParts;
 - (void)fileUploader:(MultiPartFileUploader *)uploader didUploadPartNumber:(NSInteger)partNumber etag:(NSString *)etag;
 - (void)fileUploaderDidFinishUploadingFile:(MultiPartFileUploader *)uploader;
 @end

@@ -55,6 +55,11 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
     NSData *fileData = [NSData dataWithContentsOfURL:filePathUrl];
     int numberOfParts = [self countParts:fileData];
     
+    if( [self delegate] && [[self delegate] respondsToSelector:@selector(fileUploader:didStartUploadingFileWithNumberOfParts:)] )
+    {
+        [[self delegate] fileUploader:self didStartUploadingFileWithNumberOfParts:numberOfParts];
+    }
+    
     NSMutableSet *parts = [NSMutableSet setWithCapacity:numberOfParts];
     for ( NSInteger part = 1; part <= numberOfParts; part++ ) 
     {

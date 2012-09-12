@@ -72,9 +72,19 @@
     [self.uploader uploadFileAtUrl:url operationQueue:[self queue] delegate:self];
 }
 
+- (void)fileUploader:(MultiPartFileUploader *)uploader didStartUploadingFileWithNumberOfParts:(NSInteger)numberOfParts
+{
+    NSLog(@"File uploader has split file into %d parts", numberOfParts);
+}
+
 - (void)fileUploader:(MultiPartFileUploader *)uploader didUploadPartNumber:(NSInteger)partNumber etag:(NSString *)etag
 {
     NSLog(@"File uploader did upload part number: %d and got back etag: %@", partNumber, etag);
+}
+
+- (void)fileUploaderDidFinishUploadingFile:(MultiPartFileUploader *)uploader
+{
+    NSLog(@"File uploader has finished uploading all parts");
 }
 
 @end
