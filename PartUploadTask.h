@@ -9,6 +9,7 @@
 #import <UIKit/UIKit.h>
 
 #define kPartDidFinishUploadingNotification @"PartDidFinishUploading"
+#define kPartDidFailToUploadNotification @"PartDidFailToUpload"
 
 @class AmazonS3Client, S3MultipartUpload;
 

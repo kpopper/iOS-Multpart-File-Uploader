@@ -117,6 +117,7 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
                                                                       s3Client:[self s3] 
                                                              s3MultipartUpload:[self upload]] autorelease];
             [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(completePartUpload:) name:kPartDidFinishUploadingNotification object:task];
+            [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(uploadDidFail:) name:kPartDidFailToUploadNotification object:task];
             [[self queue] addOperation:task];
         }
         
@@ -133,9 +134,21 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
     return YES;
 }
 
+- (void)uploadDidFail:(NSNotification *)notification
+{
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:kPartDidFinishUploadingNotification object:[notification object]];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:kPartDidFailToUploadNotification object:[notification object]];
+    
+    if( [self delegate] && [[self delegate] respondsToSelector:@selector(fileUploaderDidFailToUploadFile:)] )
+    {
+        [[self delegate] fileUploaderDidFailToUploadFile:self];
+    }
+}
+
 - (void)completePartUpload:(NSNotification *)notification
 {
     [[NSNotificationCenter defaultCenter] removeObserver:self name:kPartDidFinishUploadingNotification object:[notification object]];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:kPartDidFailToUploadNotification object:[notification object]];
     
     NSDictionary *userInfo = [notification userInfo];
     NSInteger partNumber = [[userInfo objectForKey:@"partNumber"] integerValue];

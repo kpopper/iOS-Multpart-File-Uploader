@@ -38,27 +38,33 @@
         return;
     }
 
-    bool using3G = ![self isWifiAvailable];
-    
-    S3UploadInputStream *stream = [S3UploadInputStream inputStreamWithData:[self data]];        
-    if ( using3G ) {
-        // If connected via 3G "throttle" the stream.
-        stream.delay = 0.2; // In seconds
-        stream.packetSize = 16; // Number of 1K blocks
+    @try 
+    {
+        bool using3G = ![self isWifiAvailable];
+        
+        S3UploadInputStream *stream = [S3UploadInputStream inputStreamWithData:[self data]];        
+        if ( using3G ) {
+            // If connected via 3G "throttle" the stream.
+            stream.delay = 0.2; // In seconds
+            stream.packetSize = 16; // Number of 1K blocks
+        }
+        
+        S3UploadPartRequest *upReq = [[S3UploadPartRequest alloc] initWithMultipartUpload:[self upload]];
+        upReq.partNumber = [self partNumber];
+        upReq.contentLength = [[self data] length];
+        upReq.stream = stream;
+        
+        S3UploadPartResponse *response = [[self s3] uploadPart:upReq];
+        
+        NSMutableDictionary *userInfo = [NSMutableDictionary dictionaryWithCapacity:2];
+        [userInfo setObject:[NSNumber numberWithInteger:[self partNumber]] forKey:@"partNumber"];
+        [userInfo setObject:response.etag forKey:@"etag"];
+        [[NSNotificationCenter defaultCenter] postNotificationName:kPartDidFinishUploadingNotification object:self userInfo:userInfo];
     }
-    
-    S3UploadPartRequest *upReq = [[S3UploadPartRequest alloc] initWithMultipartUpload:[self upload]];
-    upReq.partNumber = [self partNumber];
-    upReq.contentLength = [[self data] length];
-    upReq.stream = stream;
-    
-    S3UploadPartResponse *response = [[self s3] uploadPart:upReq];
-    
-    NSMutableDictionary *userInfo = [NSMutableDictionary dictionaryWithCapacity:2];
-    [userInfo setObject:[NSNumber numberWithInteger:[self partNumber]] forKey:@"partNumber"];
-    [userInfo setObject:response.etag forKey:@"etag"];
-    [[NSNotificationCenter defaultCenter] postNotificationName:kPartDidFinishUploadingNotification object:self userInfo:userInfo];
-    
+    @catch (AmazonClientException *exception) 
+    {
+        [[NSNotificationCenter defaultCenter] postNotificationName:kPartDidFailToUploadNotification object:self userInfo:nil];
+    }
 }
 
 -(BOOL)isWifiAvailable 
