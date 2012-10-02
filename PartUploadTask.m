@@ -41,14 +41,6 @@
 
 - (void)start
 {
-    // Ensure that this operation starts on the main thread
-//    if (![NSThread isMainThread])
-//    {
-//        [self performSelectorOnMainThread:@selector(start)
-//                               withObject:nil waitUntilDone:NO];
-//        return;
-//    }
-//    
     if ([self isCancelled] == YES)
     {
         NSLog(@"** OPERATION CANCELED **");
@@ -79,6 +71,9 @@
     
     [[self s3] uploadPart:upReq];
     
+    
+    // This is a horrible hack. Without this the method returns immediately and the upload delegates never get called.
+    // TODO: Find a more elegant solution
     do {
         [[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate distantFuture]];
     } while (!isFinished);
