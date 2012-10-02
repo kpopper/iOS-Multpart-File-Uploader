@@ -11,6 +11,7 @@
 
 @implementation PartUploadTask
 
+@synthesize delegate=_delegate;
 @synthesize partNumber=_partNumber;
 @synthesize data=_data;
 @synthesize s3=_s3;
@@ -33,6 +34,7 @@
 
 - (void)dealloc
 {
+    _delegate = nil;
     [_data release];
     [_s3 release];
     [_upload release];
@@ -73,6 +75,7 @@
     
     
     // This is a horrible hack. Without this the method returns immediately and the upload delegates never get called.
+    // Seems to be a threading thing. 
     // TODO: Find a more elegant solution
     do {
         [[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate distantFuture]];
@@ -114,35 +117,45 @@
 
 - (void)request:(AmazonServiceRequest *)request didFailWithError:(NSError *)error
 {
-    [[NSNotificationCenter defaultCenter] postNotificationName:kPartDidFailToUploadNotification object:self userInfo:nil];
     [self finish];
+
+    if( [self delegate] )
+    {
+        [[self delegate] partUploadTaskDidFail:self];
+    }
 }
 - (void)request:(AmazonServiceRequest *)request didFailWithServiceException:(NSException *)exception
 {
-    [[NSNotificationCenter defaultCenter] postNotificationName:kPartDidFailToUploadNotification object:self userInfo:nil];
     [self finish];
+    
+    if( [self delegate] )
+    {
+        [[self delegate] partUploadTaskDidFail:self];
+    }
 }
 
 - (void)request:(AmazonServiceRequest *)request didSendData:(NSInteger)bytesWritten totalBytesWritten:(NSInteger)totalBytesWritten totalBytesExpectedToWrite:(NSInteger)totalBytesExpectedToWrite
 {
-    if( [self isCancelled] )
-    { 
-        [self finish];
-        return;
+    // We cannot cancel this request so there's no point processing the cancelled state here
+    // Instead we return finished when finished and let the controller abort the overall upload
+    
+    float percentage = (float)totalBytesWritten / (float)totalBytesExpectedToWrite;
+    if( [self delegate] && [[self delegate] respondsToSelector:@selector(partUploadTask:didUploadPercentage:)] )
+    {
+        [[self delegate] partUploadTask:self didUploadPercentage:percentage];
     }
-    //TODO: Send percentage complete updates
 }
 
 - (void)request:(AmazonServiceRequest *)request didCompleteWithResponse:(AmazonServiceResponse *)response
 {
     S3UploadPartResponse *partResponse = (S3UploadPartResponse *)response;
-
-    NSMutableDictionary *userInfo = [NSMutableDictionary dictionaryWithCapacity:2];
-    [userInfo setObject:[NSNumber numberWithInteger:[self partNumber]] forKey:@"partNumber"];
-    [userInfo setObject:partResponse.etag forKey:@"etag"];
-    [[NSNotificationCenter defaultCenter] postNotificationName:kPartDidFinishUploadingNotification object:self userInfo:userInfo];
-
+    
     [self finish];
+
+    if( [self delegate] && [[self delegate] respondsToSelector:@selector(partUploadTask:didFinishUploadingPartNumber:etag:)] )
+    {
+        [[self delegate] partUploadTask:self didFinishUploadingPartNumber:[self partNumber] etag:[partResponse etag]];
+    }
 }
 
 

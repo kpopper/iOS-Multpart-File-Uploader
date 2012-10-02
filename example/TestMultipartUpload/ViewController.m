@@ -49,6 +49,7 @@
     
     self.uploader = [[[MultiPartFileUploader alloc] initWithS3Key:s3AccessKey secret:s3SecretKey bucket:s3Bucket] autorelease];
     self.queue = [[[NSOperationQueue alloc] init] autorelease];
+    [self.queue setMaxConcurrentOperationCount:2];
 }
 
 - (void)viewDidUnload
@@ -72,11 +73,24 @@
     NSString *urlString = [self.urlField text];
     NSURL *url = [NSURL fileURLWithPath:urlString];
     [self.uploader uploadFileAtUrl:url operationQueue:self.queue delegate:self];
+    
+    [self.urlField resignFirstResponder];
+}
+
+- (IBAction)cancel:(id)sender
+{
+    [self.uploader cancel];
+    NSLog(@"Upload has been manually cancelled");
 }
 
 - (void)fileUploader:(MultiPartFileUploader *)uploader didStartUploadingFileWithNumberOfParts:(NSInteger)numberOfParts
 {
     NSLog(@"Uploader has split file '%@' into %d parts", uploader.filePathUrl, numberOfParts);
+}
+
+- (void)fileUploader:(MultiPartFileUploader *)uploader didUploadPercentage:(float)percentage ofPartNumber:(NSInteger)partNumber
+{
+    //NSLog(@"Part %d - %1.0f percent complete", partNumber, percentage * 100);
 }
 
 - (void)fileUploader:(MultiPartFileUploader *)uploader didUploadPartNumber:(NSInteger)partNumber etag:(NSString *)etag
@@ -88,5 +102,6 @@
 {
     NSLog(@"Uploader has finished uploading file '%@' to %@", uploader.filePathUrl, destinationPath);
 }
+
 
 @end

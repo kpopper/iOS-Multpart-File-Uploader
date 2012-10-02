@@ -16,5 +16,6 @@
 @property (nonatomic, retain) IBOutlet UITextView *urlField;
 
 - (IBAction)upload:(id)sender;
+- (IBAction)cancel:(id)sender;
 
 @end

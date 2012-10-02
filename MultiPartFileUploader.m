@@ -7,7 +7,6 @@
 //
 
 #import "MultiPartFileUploader.h"
-#import "PartUploadTask.h"
 
 @interface MultiPartFileUploader () 
 @property (nonatomic, copy) NSString *s3Key;
@@ -18,7 +17,8 @@
 @property (nonatomic, retain) S3MultipartUpload *upload;
 @property (nonatomic, retain) S3CompleteMultipartUploadRequest *compReq;
 @property (nonatomic, retain) NSOperationQueue *queue;
-@property (nonatomic, retain) NSMutableSet *outstandingParts;
+@property (nonatomic, retain) NSMutableSet *outstandingPartNumbers;
+@property (nonatomic, retain) NSMutableSet *tasks;
 @property (nonatomic, assign) BOOL isCancelled;
 - (void)abortUpload;
 @end
@@ -35,7 +35,8 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
 @synthesize upload=_upload;
 @synthesize compReq=_compReq;
 @synthesize queue=_queue;
-@synthesize outstandingParts=_outstandingParts;
+@synthesize outstandingPartNumbers=_outstandingPartNumbers;
+@synthesize tasks=_tasks;
 @synthesize filePathUrl=_filePathUrl;
 @synthesize isCancelled=_isCancelled;
 
@@ -55,6 +56,10 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
 - (void)dealloc
 {
     _delegate = nil;
+    [_tasks removeAllObjects];
+    [_tasks release];
+    [_outstandingPartNumbers removeAllObjects];
+    [_outstandingPartNumbers release];
     [_s3 release];
     [_upload release];
     [_compReq release];
@@ -98,7 +103,8 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
     [self setFilePathUrl:filePathUrl];
     [self setQueue:queue];
     [self setDelegate:delegate];
-    [self setOutstandingParts:[NSMutableSet setWithSet:outstandingParts]];
+    [self setOutstandingPartNumbers:[NSMutableSet setWithSet:outstandingParts]];
+    [self setTasks:[NSMutableSet setWithCapacity:[outstandingParts count]]];
     
     NSData *fileData = [NSData dataWithContentsOfURL:[self filePathUrl]];
     
@@ -109,7 +115,7 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
         [self setUpload:[[[self s3] initiateMultipartUpload:initReq] multipartUpload]];
         [self setCompReq:[[[S3CompleteMultipartUploadRequest alloc] initWithMultipartUpload:[self upload]] autorelease]];
         
-        for (NSNumber *partNumber in [self outstandingParts]) 
+        for (NSNumber *partNumber in [self outstandingPartNumbers]) 
         {
             NSInteger part = [partNumber integerValue];
 
@@ -119,8 +125,8 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
                                                                   dataToUpload:dataForPart 
                                                                       s3Client:[self s3] 
                                                              s3MultipartUpload:[self upload]] autorelease];
-            [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(completePartUpload:) name:kPartDidFinishUploadingNotification object:task];
-            [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(uploadDidFail:) name:kPartDidFailToUploadNotification object:task];
+            [task setDelegate:self];
+            [[self tasks] addObject:task];
             [[self queue] addOperation:task];
         }
         
@@ -141,25 +147,20 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
 {
     [self setIsCancelled:YES];
     
-    for (PartUploadTask *part in [self outstandingParts]) 
+    for (PartUploadTask *task in [self tasks]) 
     {
-        [part cancel];
+        [task cancel];
     }
  
     [self abortUpload];
 }
 
-#pragma mark - upload delegate notifications
+#pragma mark - part upload delegate methods
 
-- (void)uploadDidFail:(NSNotification *)notification
+- (void)partUploadTaskDidFail:(PartUploadTask *)task
 {
-    [[NSNotificationCenter defaultCenter] removeObserver:self name:kPartDidFinishUploadingNotification object:[notification object]];
-    [[NSNotificationCenter defaultCenter] removeObserver:self name:kPartDidFailToUploadNotification object:[notification object]];
-    
-    if( [self isCancelled] )
-    {
-        [self abortUpload];
-    }
+    [[self tasks] removeObject:task];
+    [[self outstandingPartNumbers] removeObject:[NSNumber numberWithInteger:[task partNumber]]];
     
     if( [self delegate] && [[self delegate] respondsToSelector:@selector(fileUploaderDidFailToUploadFile:)] )
     {
@@ -167,23 +168,32 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
     }
 }
 
-- (void)completePartUpload:(NSNotification *)notification
+- (void)partUploadTask:(PartUploadTask *)task didUploadPercentage:(float)progress
 {
-    [[NSNotificationCenter defaultCenter] removeObserver:self name:kPartDidFinishUploadingNotification object:[notification object]];
-    [[NSNotificationCenter defaultCenter] removeObserver:self name:kPartDidFailToUploadNotification object:[notification object]];
-    
-    NSDictionary *userInfo = [notification userInfo];
-    NSInteger partNumber = [[userInfo objectForKey:@"partNumber"] integerValue];
-    NSString *etag = [userInfo objectForKey:@"etag"];
-    [[self outstandingParts] removeObject:[NSNumber numberWithInteger:partNumber]];
+    if( [self delegate] && [[self delegate] respondsToSelector:@selector(fileUploader:didUploadPercentage:ofPartNumber:)] )
+    {
+        [[self delegate] fileUploader:self didUploadPercentage:progress ofPartNumber:[task partNumber]];
+    }
+}
+
+- (void)partUploadTask:(PartUploadTask *)task didFinishUploadingPartNumber:(NSInteger)partNumber etag:(NSString *)etag
+{
+    [[self tasks] removeObject:task];
+    [[self outstandingPartNumbers] removeObject:[NSNumber numberWithInteger:partNumber]];
     [[self compReq] addPartWithPartNumber:partNumber withETag:etag];
+    
+    if( [self isCancelled] )
+    {
+        [self abortUpload];
+        return;
+    }
     
     if( [self delegate] && [[self delegate] respondsToSelector:@selector(fileUploader:didUploadPartNumber:etag:)] )
     {
         [[self delegate] fileUploader:self didUploadPartNumber:partNumber etag:etag];
     }
 
-    if( [[self outstandingParts] count] == 0 )
+    if( [[self outstandingPartNumbers] count] == 0 )
     {
         [[self s3] completeMultipartUpload:[self compReq]];
 
@@ -192,7 +202,6 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
             [[self delegate] fileUploader:self didFinishUploadingFileTo:[[self upload] key]];
         }
     }
-
 }
 
 #pragma mark - utility functions
@@ -226,8 +235,14 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
 
 - (void)abortUpload
 {
+    // We may need to call this several times. We try after each outstanding part has uploaded and eventually we should be clean.
     S3AbortMultipartUploadRequest *abortRequest = [[[S3AbortMultipartUploadRequest alloc] initWithMultipartUpload:[self upload]] autorelease];
     [[self s3] abortMultipartUpload:abortRequest];
+    
+    if( [self delegate] && [[self delegate] respondsToSelector:@selector(fileUploaderDidAbort:)] )
+    {
+        [[self delegate] fileUploaderDidAbort:self];
+    }
 }
 
 @end

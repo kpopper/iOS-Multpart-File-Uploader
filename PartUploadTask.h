@@ -9,10 +9,15 @@
 #import <UIKit/UIKit.h>
 #import <AWSiOSSDK/S3/AmazonS3Client.h>
 
-#define kPartDidFinishUploadingNotification @"PartDidFinishUploading"
-#define kPartDidFailToUploadNotification @"PartDidFailToUpload"
+@class AmazonS3Client, S3MultipartUpload, PartUploadTask;
 
-@class AmazonS3Client, S3MultipartUpload;
+@protocol PartUploadTaskDelegate <NSObject>
+- (void)partUploadTaskDidFail:(PartUploadTask *)task;
+@optional
+- (void)partUploadTaskDidBegin:(PartUploadTask *)task;
+- (void)partUploadTask:(PartUploadTask *)task didUploadPercentage:(float)progress;
+- (void)partUploadTask:(PartUploadTask *)task didFinishUploadingPartNumber:(NSInteger)partNumber etag:(NSString *)etag;
+@end
 
 @interface PartUploadTask : NSOperation <AmazonServiceRequestDelegate>
 {
@@ -20,6 +25,7 @@
     BOOL isFinished;
 }
 
+@property (nonatomic, assign) id<PartUploadTaskDelegate> delegate;
 @property (nonatomic, assign) NSInteger partNumber;
 @property (nonatomic, retain) NSData *data;
 @property (nonatomic, retain) AmazonS3Client *s3;

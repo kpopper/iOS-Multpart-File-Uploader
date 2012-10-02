@@ -7,6 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
+#import "PartUploadTask.h"
 #import <AWSiOSSDK/S3/AmazonS3Client.h>
 
 @class MultiPartFileUploader;
@@ -15,12 +16,14 @@
 @optional
 - (void)fileUploaderDidFailToUploadFile:(MultiPartFileUploader *)uploader;
 - (void)fileUploader:(MultiPartFileUploader *)uploader didStartUploadingFileWithNumberOfParts:(NSInteger)numberOfParts;
+- (void)fileUploader:(MultiPartFileUploader *)uploader didUploadPercentage:(float)percentage ofPartNumber:(NSInteger)partNumber;
 - (void)fileUploader:(MultiPartFileUploader *)uploader didUploadPartNumber:(NSInteger)partNumber etag:(NSString *)etag;
 - (void)fileUploader:(MultiPartFileUploader *)uploader didFinishUploadingFileTo:(NSString *)destinationPath;
+- (void)fileUploaderDidAbort:(MultiPartFileUploader *)uploader;
 @end
 
 
-@interface MultiPartFileUploader : NSObject <AmazonServiceRequestDelegate>
+@interface MultiPartFileUploader : NSObject <AmazonServiceRequestDelegate, PartUploadTaskDelegate>
 
 /**
  Location of file being uploaded on local machine
