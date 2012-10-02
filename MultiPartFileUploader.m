@@ -9,7 +9,7 @@
 #import "MultiPartFileUploader.h"
 #import "PartUploadTask.h"
 
-@interface MultiPartFileUploader ()
+@interface MultiPartFileUploader () 
 @property (nonatomic, copy) NSString *s3Key;
 @property (nonatomic, copy) NSString *s3Secret;
 @property (nonatomic, copy) NSString *s3Bucket;
@@ -19,6 +19,8 @@
 @property (nonatomic, retain) S3CompleteMultipartUploadRequest *compReq;
 @property (nonatomic, retain) NSOperationQueue *queue;
 @property (nonatomic, retain) NSMutableSet *outstandingParts;
+@property (nonatomic, assign) BOOL isCancelled;
+- (void)abortUpload;
 @end
 
 @implementation MultiPartFileUploader
@@ -35,6 +37,7 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
 @synthesize queue=_queue;
 @synthesize outstandingParts=_outstandingParts;
 @synthesize filePathUrl=_filePathUrl;
+@synthesize isCancelled=_isCancelled;
 
 - (id)initWithS3Key:(NSString *)s3Key secret:(NSString *)s3Secret bucket:(NSString *)s3Bucket
 {
@@ -134,10 +137,29 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
     return YES;
 }
 
+- (void)cancel
+{
+    [self setIsCancelled:YES];
+    
+    for (PartUploadTask *part in [self outstandingParts]) 
+    {
+        [part cancel];
+    }
+ 
+    [self abortUpload];
+}
+
+#pragma mark - upload delegate notifications
+
 - (void)uploadDidFail:(NSNotification *)notification
 {
     [[NSNotificationCenter defaultCenter] removeObserver:self name:kPartDidFinishUploadingNotification object:[notification object]];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:kPartDidFailToUploadNotification object:[notification object]];
+    
+    if( [self isCancelled] )
+    {
+        [self abortUpload];
+    }
     
     if( [self delegate] && [[self delegate] respondsToSelector:@selector(fileUploaderDidFailToUploadFile:)] )
     {
@@ -173,6 +195,8 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
 
 }
 
+#pragma mark - utility functions
+
 -(NSData*)getPart:(int)part fromData:(NSData*)fullData 
 {
     NSRange range;
@@ -198,6 +222,12 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
 - (NSString *)fileKeyOnS3:(NSString *)filePath
 {
     return [@"direct_uploads" stringByAppendingPathComponent:filePath];
+}
+
+- (void)abortUpload
+{
+    S3AbortMultipartUploadRequest *abortRequest = [[[S3AbortMultipartUploadRequest alloc] initWithMultipartUpload:[self upload]] autorelease];
+    [[self s3] abortMultipartUpload:abortRequest];
 }
 
 @end

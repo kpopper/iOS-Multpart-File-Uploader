@@ -55,4 +55,9 @@
  */
 - (BOOL)uploadFileAtUrl:(NSURL *)filePathUrl outstandingParts:(NSSet *)outstandingParts operationQueue:(NSOperationQueue *)queue delegate:(id<MultiPartFileUploaderDelegate>)delegate;
 
+/**
+ Stop uploading a file
+ */
+- (void)cancel;
+
 @end
