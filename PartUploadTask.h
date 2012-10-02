@@ -7,13 +7,18 @@
 //
 
 #import <UIKit/UIKit.h>
+#import <AWSiOSSDK/S3/AmazonS3Client.h>
 
 #define kPartDidFinishUploadingNotification @"PartDidFinishUploading"
 #define kPartDidFailToUploadNotification @"PartDidFailToUpload"
 
 @class AmazonS3Client, S3MultipartUpload;
 
-@interface PartUploadTask : NSOperation
+@interface PartUploadTask : NSOperation <AmazonServiceRequestDelegate>
+{
+    BOOL isExecuting;
+    BOOL isFinished;
+}
 
 @property (nonatomic, assign) NSInteger partNumber;
 @property (nonatomic, retain) NSData *data;
