@@ -90,7 +90,7 @@
 
 - (void)fileUploader:(MultiPartFileUploader *)uploader didUploadPercentage:(float)percentage ofPartNumber:(NSInteger)partNumber
 {
-    //NSLog(@"Part %d - %1.0f percent complete", partNumber, percentage * 100);
+    NSLog(@"Part %d - %1.0f percent complete", partNumber, percentage * 100);
 }
 
 - (void)fileUploader:(MultiPartFileUploader *)uploader didUploadPartNumber:(NSInteger)partNumber etag:(NSString *)etag

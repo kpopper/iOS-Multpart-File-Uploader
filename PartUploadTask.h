@@ -30,6 +30,7 @@
 @property (nonatomic, retain) NSData *data;
 @property (nonatomic, retain) AmazonS3Client *s3;
 @property (nonatomic, retain) S3MultipartUpload *upload;
+@property (nonatomic, assign) float percentageUploaded;
 
 - (id)initWithPartNumber:(NSInteger)partNumber dataToUpload:(NSData *)data s3Client:(AmazonS3Client *)s3 s3MultipartUpload:(S3MultipartUpload *)upload;
 

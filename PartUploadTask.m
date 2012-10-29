@@ -16,6 +16,7 @@
 @synthesize data=_data;
 @synthesize s3=_s3;
 @synthesize upload=_upload;
+@synthesize percentageUploaded=_percentageUploaded;
 
 - (id)initWithPartNumber:(NSInteger)partNumber dataToUpload:(NSData *)data s3Client:(AmazonS3Client *)s3 s3MultipartUpload:(S3MultipartUpload *)upload
 {
@@ -113,6 +114,18 @@
     [self didChangeValueForKey:@"isFinished"];
 }
 
+- (BOOL)isSignificantIncrease:(float)percentage
+{
+    int mult = percentage * 100;
+    float rounded = mult / 100.0f;
+    if( rounded > [self percentageUploaded] )
+    {
+        [self setPercentageUploaded:rounded];
+        return YES;
+    }
+    return NO;
+}
+
 #pragma mark - AmazonServiceRequestDelegate
 
 - (void)request:(AmazonServiceRequest *)request didFailWithError:(NSError *)error
@@ -140,6 +153,11 @@
     // Instead we return finished when finished and let the controller abort the overall upload
     
     float percentage = (float)totalBytesWritten / (float)totalBytesExpectedToWrite;
+    if( ![self isSignificantIncrease:percentage] )
+    {
+        return;
+    }
+    
     if( [self delegate] && [[self delegate] respondsToSelector:@selector(partUploadTask:didUploadPercentage:)] )
     {
         [[self delegate] partUploadTask:self didUploadPercentage:percentage];
