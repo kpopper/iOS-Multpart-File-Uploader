@@ -56,6 +56,7 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
 - (void)dealloc
 {
     _delegate = nil;
+    [_tasks makeObjectsPerformSelector:@selector(setDelegate:) withObject:nil];
     [_tasks removeAllObjects];
     [_tasks release];
     [_outstandingPartNumbers removeAllObjects];
