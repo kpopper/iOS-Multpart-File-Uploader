@@ -165,7 +165,9 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
     
     if( [self delegate] && [[self delegate] respondsToSelector:@selector(fileUploaderDidFailToUploadFile:)] )
     {
-        [[self delegate] fileUploaderDidFailToUploadFile:self];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [[self delegate] fileUploaderDidFailToUploadFile:self];
+        });
     }
 }
 
@@ -173,7 +175,9 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
 {
     if( [self delegate] && [[self delegate] respondsToSelector:@selector(fileUploader:didUploadPercentage:ofPartNumber:)] )
     {
-        [[self delegate] fileUploader:self didUploadPercentage:progress ofPartNumber:[task partNumber]];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [[self delegate] fileUploader:self didUploadPercentage:progress ofPartNumber:[task partNumber]];
+        });
     }
 }
 
@@ -191,7 +195,9 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
     
     if( [self delegate] && [[self delegate] respondsToSelector:@selector(fileUploader:didUploadPartNumber:etag:)] )
     {
-        [[self delegate] fileUploader:self didUploadPartNumber:partNumber etag:etag];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [[self delegate] fileUploader:self didUploadPartNumber:partNumber etag:etag];
+        });
     }
 
     if( [[self outstandingPartNumbers] count] == 0 )
@@ -200,7 +206,9 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
 
         if( [self delegate] && [[self delegate] respondsToSelector:@selector(fileUploader:didFinishUploadingFileTo:)] )
         {
-            [[self delegate] fileUploader:self didFinishUploadingFileTo:[[self upload] key]];
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [[self delegate] fileUploader:self didFinishUploadingFileTo:[[self upload] key]];
+            });
         }
     }
 }
@@ -242,7 +250,9 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
     
     if( [self delegate] && [[self delegate] respondsToSelector:@selector(fileUploaderDidAbort:)] )
     {
-        [[self delegate] fileUploaderDidAbort:self];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [[self delegate] fileUploaderDidAbort:self];
+        });
     }
 }
 
