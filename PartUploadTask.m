@@ -72,7 +72,7 @@
     upReq.stream = stream;
     upReq.delegate = self;
     
-    [[self s3] uploadPart:upReq];
+    [[self s3] uploadPart:[upReq autorelease]];
     
     
     // This is a horrible hack. Without this the method returns immediately and the upload delegates never get called.
