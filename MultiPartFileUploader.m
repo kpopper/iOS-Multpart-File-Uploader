@@ -146,14 +146,16 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
 
 - (void)cancel
 {
-    [self setIsCancelled:YES];
-    
-    for (PartUploadTask *task in [self tasks]) 
-    {
-        [task cancel];
+    if(!self.isCancelled) {
+        [self setIsCancelled:YES];
+        
+        for (PartUploadTask *task in [self tasks]) 
+        {
+            [task cancel];
+        }
+     
+        [self abortUpload];
     }
- 
-    [self abortUpload];
 }
 
 #pragma mark - part upload delegate methods
