@@ -35,9 +35,10 @@
  @param s3Key The Access Key Id for your S3 account
  @param s3Secret The Secret Access Key for your S3 account
  @param s3Bucket The S3 bucket you want to use to store your file
+ @param s3FileKey The S3 key you want to use to store your file - pass nil to have the key generated from the filePathUrl
  @returns a new instance of MultiPartFileUploader
  */
-- (id)initWithS3Key:(NSString *)s3Key secret:(NSString *)s3Secret bucket:(NSString *)s3Bucket;
+- (id)initWithS3Key:(NSString *)s3Key secret:(NSString *)s3Secret bucket:(NSString *)s3Bucket fileKey:(NSString*)s3FileKey;
 
 /**
  Upload an entire file in chunks to the given S3 bucket

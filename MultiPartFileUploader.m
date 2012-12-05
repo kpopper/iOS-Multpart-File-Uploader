@@ -12,6 +12,7 @@
 @property (nonatomic, copy) NSString *s3Key;
 @property (nonatomic, copy) NSString *s3Secret;
 @property (nonatomic, copy) NSString *s3Bucket;
+@property (nonatomic, copy) NSString *s3FileKey;
 @property (nonatomic, assign) id<MultiPartFileUploaderDelegate> delegate;
 @property (nonatomic, retain) AmazonS3Client *s3;
 @property (nonatomic, retain) S3MultipartUpload *upload;
@@ -30,6 +31,7 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
 @synthesize s3Key=_s3Key;
 @synthesize s3Secret=_s3Secret;
 @synthesize s3Bucket=_s3Bucket;
+@synthesize s3FileKey=_s3FileKey;
 @synthesize delegate=_delegate;
 @synthesize s3=_s3;
 @synthesize upload=_upload;
@@ -40,7 +42,7 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
 @synthesize filePathUrl=_filePathUrl;
 @synthesize isCancelled=_isCancelled;
 
-- (id)initWithS3Key:(NSString *)s3Key secret:(NSString *)s3Secret bucket:(NSString *)s3Bucket
+- (id)initWithS3Key:(NSString *)s3Key secret:(NSString *)s3Secret bucket:(NSString *)s3Bucket fileKey:(NSString*)s3FileKey;
 {
     self = [super init];
     if( self )
@@ -48,6 +50,7 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
         [self setS3Key:s3Key];
         [self setS3Secret:s3Secret];
         [self setS3Bucket:s3Bucket];
+        [self setS3FileKey:s3FileKey];
         [self setS3:[[[AmazonS3Client alloc] initWithAccessKey:[self s3Key] withSecretKey:[self s3Secret]] autorelease]];
     }
     return self;
@@ -111,7 +114,7 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
     
     @try 
     {
-        NSString *keyOnS3 = [self fileKeyOnS3:[[self filePathUrl] relativePath]];
+        NSString *keyOnS3 =  self.s3FileKey ?: [self fileKeyOnS3:[[self filePathUrl] relativePath]];
         S3InitiateMultipartUploadRequest *initReq = [[[S3InitiateMultipartUploadRequest alloc] initWithKey:keyOnS3 inBucket:[self s3Bucket]] autorelease];
         [self setUpload:[[[self s3] initiateMultipartUpload:initReq] multipartUpload]];
         [self setCompReq:[[[S3CompleteMultipartUploadRequest alloc] initWithMultipartUpload:[self upload]] autorelease]];
