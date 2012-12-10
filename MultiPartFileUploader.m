@@ -116,6 +116,7 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
     {
         NSString *keyOnS3 =  self.s3FileKey ?: [self fileKeyOnS3:[[self filePathUrl] relativePath]];
         S3InitiateMultipartUploadRequest *initReq = [[[S3InitiateMultipartUploadRequest alloc] initWithKey:keyOnS3 inBucket:[self s3Bucket]] autorelease];
+        initReq.cannedACL = [S3CannedACL publicRead];
         [self setUpload:[[[self s3] initiateMultipartUpload:initReq] multipartUpload]];
         [self setCompReq:[[[S3CompleteMultipartUploadRequest alloc] initWithMultipartUpload:[self upload]] autorelease]];
         
