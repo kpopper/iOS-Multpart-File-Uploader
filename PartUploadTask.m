@@ -132,7 +132,7 @@
 {
     [self finish];
 
-    if( [self delegate] )
+    if( [self delegate] && [[self delegate] respondsToSelector:@selector(partUploadTaskDidFail:)])
     {
         [[self delegate] partUploadTaskDidFail:self];
     }
