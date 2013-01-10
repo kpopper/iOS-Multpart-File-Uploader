@@ -52,12 +52,16 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
         [self setS3Bucket:s3Bucket];
         [self setS3FileKey:s3FileKey];
         [self setS3:[[[AmazonS3Client alloc] initWithAccessKey:[self s3Key] withSecretKey:[self s3Secret]] autorelease]];
+        
+        [[self s3] setTimeout: 999999999];
     }
     return self;
 }
 
 - (void)dealloc
 {
+    NSLog(@"dealloc");
+    
     _delegate = nil;
     [_tasks makeObjectsPerformSelector:@selector(setDelegate:) withObject:nil];
     [_tasks removeAllObjects];
@@ -145,6 +149,8 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
         NSLog( @"General fail: %@", exception );
     }
     
+    NSLog(@"retain");
+    [self retain]; //until all upload is finished
     return YES;
 }
 
@@ -173,6 +179,7 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
     {
         dispatch_async(dispatch_get_main_queue(), ^{
             [[self delegate] fileUploaderDidFailToUploadFile:self];
+            [self release];
         });
     }
 }
@@ -185,6 +192,7 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
             [[self delegate] fileUploader:self didUploadPercentage:progress ofPartNumber:[task partNumber]];
         });
     }
+
 }
 
 - (void)partUploadTask:(PartUploadTask *)task didFinishUploadingPartNumber:(NSInteger)partNumber etag:(NSString *)etag
@@ -214,6 +222,7 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
         {
             dispatch_async(dispatch_get_main_queue(), ^{
                 [[self delegate] fileUploader:self didFinishUploadingFileTo:[[self upload] key]];
+                [self release];
             });
         }
     }
@@ -258,6 +267,7 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
     {
         dispatch_async(dispatch_get_main_queue(), ^{
             [[self delegate] fileUploaderDidAbort:self];
+            [self release];
         });
     }
 }

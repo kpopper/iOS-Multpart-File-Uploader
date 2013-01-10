@@ -35,7 +35,7 @@
 
 - (void)dealloc
 {
-    _delegate = nil;
+    [_delegate release];
     [_data release];
     [_s3 release];
     [_upload release];
