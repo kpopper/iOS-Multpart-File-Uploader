@@ -94,7 +94,6 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
     [self setQueue:queue];
     [self setDelegate:delegate];
     [self setOutstandingPartNumbers:[NSMutableSet setWithSet:outstandingParts]];
-    [self setTasks:[NSMutableSet setWithCapacity:[outstandingParts count]]];
     
     NSData *fileData = [NSData dataWithContentsOfURL:[self filePathUrl]];
     
@@ -137,13 +136,9 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
 {
     if(!self.isCancelled) {
         [self setIsCancelled:YES];
-        
-        for (PartUploadTask *task in [self tasks]) 
-        {
-            [task cancel];
-        }
-     
-        [self abortUpload];
+        [self.queue cancelAllOperations];
+        [self.outstandingPartNumbers removeAllObjects];
+        //[self abortUpload];
     }
 }
 
@@ -151,7 +146,6 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
 
 - (void)partUploadTaskDidFail:(PartUploadTask *)task
 {
-    [[self tasks] removeObject:task];
     [[self outstandingPartNumbers] removeObject:[NSNumber numberWithInteger:[task partNumber]]];
     
     if( [self delegate] && [[self delegate] respondsToSelector:@selector(fileUploaderDidFailToUploadFile:)] )
@@ -174,7 +168,6 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
 
 - (void)partUploadTask:(PartUploadTask *)task didFinishUploadingPartNumber:(NSInteger)partNumber etag:(NSString *)etag
 {
-    [[self tasks] removeObject:task];
     [[self outstandingPartNumbers] removeObject:[NSNumber numberWithInteger:partNumber]];
     [[self compReq] addPartWithPartNumber:partNumber withETag:etag];
     

@@ -141,8 +141,11 @@
 
 - (void)request:(AmazonServiceRequest *)request didSendData:(NSInteger)bytesWritten totalBytesWritten:(NSInteger)totalBytesWritten totalBytesExpectedToWrite:(NSInteger)totalBytesExpectedToWrite
 {
-    // We cannot cancel this request so there's no point processing the cancelled state here
-    // Instead we return finished when finished and let the controller abort the overall upload
+    if(self.isCancelled) {
+        [request cancel];
+        [self finish];
+        return;
+    }
     
     float percentage = (float)totalBytesWritten / (float)totalBytesExpectedToWrite;
     if( ![self isSignificantIncrease:percentage] )
