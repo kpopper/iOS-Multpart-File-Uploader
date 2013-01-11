@@ -137,6 +137,7 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
     if(!self.isCancelled) {
         [self setIsCancelled:YES];
         [self.queue cancelAllOperations];
+        //[self.outstandingPartNumbers removeAllObjects];
         [self abortUpload];
     }
 }
@@ -227,8 +228,8 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
 - (void)abortUpload
 {
     // We may need to call this several times. We try after each outstanding part has uploaded and eventually we should be clean.
-    S3AbortMultipartUploadRequest *abortRequest = [[S3AbortMultipartUploadRequest alloc] initWithMultipartUpload:[self upload]];
-    [[self s3] abortMultipartUpload:abortRequest];
+    //S3AbortMultipartUploadRequest *abortRequest = [[S3AbortMultipartUploadRequest alloc] initWithMultipartUpload:[self upload]];
+    //[[self s3] abortMultipartUpload:abortRequest];
     
     if( [self delegate] && [[self delegate] respondsToSelector:@selector(fileUploaderDidAbort:)] )
     {
