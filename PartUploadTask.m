@@ -33,14 +33,6 @@
     return self;
 }
 
-- (void)dealloc
-{
-    _delegate = nil;
-    [_data release];
-    [_s3 release];
-    [_upload release];
-    [super dealloc];
-}
 
 - (void)start
 {
@@ -72,7 +64,7 @@
     upReq.stream = stream;
     upReq.delegate = self;
     
-    [[self s3] uploadPart:[upReq autorelease]];
+    [[self s3] uploadPart:upReq];
     
     
     // This is a horrible hack. Without this the method returns immediately and the upload delegates never get called.

@@ -13,13 +13,12 @@
 @property (nonatomic, copy) NSString *s3Secret;
 @property (nonatomic, copy) NSString *s3Bucket;
 @property (nonatomic, copy) NSString *s3FileKey;
-@property (nonatomic, assign) id<MultiPartFileUploaderDelegate> delegate;
-@property (nonatomic, retain) AmazonS3Client *s3;
-@property (nonatomic, retain) S3MultipartUpload *upload;
-@property (nonatomic, retain) S3CompleteMultipartUploadRequest *compReq;
-@property (nonatomic, retain) NSOperationQueue *queue;
-@property (nonatomic, retain) NSMutableSet *outstandingPartNumbers;
-@property (nonatomic, retain) NSMutableSet *tasks;
+@property (nonatomic, weak) id<MultiPartFileUploaderDelegate> delegate;
+@property (nonatomic, strong) AmazonS3Client *s3;
+@property (nonatomic, strong) S3MultipartUpload *upload;
+@property (nonatomic, strong) S3CompleteMultipartUploadRequest *compReq;
+@property (nonatomic, strong) NSOperationQueue *queue;
+@property (nonatomic, strong) NSMutableSet *outstandingPartNumbers;
 @property (nonatomic, assign) BOOL isCancelled;
 - (void)abortUpload;
 @end
@@ -38,7 +37,6 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
 @synthesize compReq=_compReq;
 @synthesize queue=_queue;
 @synthesize outstandingPartNumbers=_outstandingPartNumbers;
-@synthesize tasks=_tasks;
 @synthesize filePathUrl=_filePathUrl;
 @synthesize isCancelled=_isCancelled;
 
@@ -51,29 +49,17 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
         [self setS3Secret:s3Secret];
         [self setS3Bucket:s3Bucket];
         [self setS3FileKey:s3FileKey];
-        [self setS3:[[[AmazonS3Client alloc] initWithAccessKey:[self s3Key] withSecretKey:[self s3Secret]] autorelease]];
+        [self setS3:[[AmazonS3Client alloc] initWithAccessKey:[self s3Key] withSecretKey:[self s3Secret]]];
+        
+        [[self s3] setTimeout: 999999999];
     }
     return self;
 }
 
 - (void)dealloc
 {
-    _delegate = nil;
-    [_tasks makeObjectsPerformSelector:@selector(setDelegate:) withObject:nil];
-    [_tasks removeAllObjects];
-    [_tasks release];
     [_outstandingPartNumbers removeAllObjects];
-    [_outstandingPartNumbers release];
-    [_s3 release];
-    [_upload release];
-    [_compReq release];
     [_queue cancelAllOperations];
-    [_queue release];
-    [_s3Key release];
-    [_s3Secret release];
-    [_s3Bucket release];
-    [_filePathUrl release];
-    [super dealloc];
 }
 
 - (BOOL)uploadFileAtUrl:(NSURL *)filePathUrl operationQueue:(NSOperationQueue *)queue delegate:(id<MultiPartFileUploaderDelegate>)delegate
@@ -115,10 +101,10 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
     @try 
     {
         NSString *keyOnS3 =  self.s3FileKey ?: [self fileKeyOnS3:[[self filePathUrl] relativePath]];
-        S3InitiateMultipartUploadRequest *initReq = [[[S3InitiateMultipartUploadRequest alloc] initWithKey:keyOnS3 inBucket:[self s3Bucket]] autorelease];
+        S3InitiateMultipartUploadRequest *initReq = [[S3InitiateMultipartUploadRequest alloc] initWithKey:keyOnS3 inBucket:[self s3Bucket]];
         initReq.cannedACL = [S3CannedACL publicRead];
         [self setUpload:[[[self s3] initiateMultipartUpload:initReq] multipartUpload]];
-        [self setCompReq:[[[S3CompleteMultipartUploadRequest alloc] initWithMultipartUpload:[self upload]] autorelease]];
+        [self setCompReq:[[S3CompleteMultipartUploadRequest alloc] initWithMultipartUpload:[self upload]]];
         
         for (NSNumber *partNumber in [self outstandingPartNumbers]) 
         {
@@ -126,12 +112,11 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
 
             NSData *dataForPart = [self getPart:part fromData:fileData];
             
-            PartUploadTask *task = [[[PartUploadTask alloc] initWithPartNumber:part 
+            PartUploadTask *task = [[PartUploadTask alloc] initWithPartNumber:part 
                                                                   dataToUpload:dataForPart 
                                                                       s3Client:[self s3] 
-                                                             s3MultipartUpload:[self upload]] autorelease];
+                                                             s3MultipartUpload:[self upload]];
             [task setDelegate:self];
-            [[self tasks] addObject:task];
             [[self queue] addOperation:task];
         }
         
@@ -251,7 +236,7 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
 - (void)abortUpload
 {
     // We may need to call this several times. We try after each outstanding part has uploaded and eventually we should be clean.
-    S3AbortMultipartUploadRequest *abortRequest = [[[S3AbortMultipartUploadRequest alloc] initWithMultipartUpload:[self upload]] autorelease];
+    S3AbortMultipartUploadRequest *abortRequest = [[S3AbortMultipartUploadRequest alloc] initWithMultipartUpload:[self upload]];
     [[self s3] abortMultipartUpload:abortRequest];
     
     if( [self delegate] && [[self delegate] respondsToSelector:@selector(fileUploaderDidAbort:)] )

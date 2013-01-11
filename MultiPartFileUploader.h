@@ -28,7 +28,7 @@
 /**
  Location of file being uploaded on local machine
  */
-@property (nonatomic, retain) NSURL *filePathUrl;
+@property (nonatomic, strong) NSURL *filePathUrl;
 
 /**
  Create an instance of an uploader with S3 credentials
