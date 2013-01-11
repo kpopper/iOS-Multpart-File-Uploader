@@ -13,7 +13,7 @@
 @property (nonatomic, copy) NSString *s3Secret;
 @property (nonatomic, copy) NSString *s3Bucket;
 @property (nonatomic, copy) NSString *s3FileKey;
-@property (nonatomic, weak) id<MultiPartFileUploaderDelegate> delegate;
+@property (nonatomic, assign) id<MultiPartFileUploaderDelegate> delegate;
 @property (nonatomic, strong) AmazonS3Client *s3;
 @property (nonatomic, strong) S3MultipartUpload *upload;
 @property (nonatomic, strong) S3CompleteMultipartUploadRequest *compReq;
@@ -51,7 +51,7 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
         [self setS3FileKey:s3FileKey];
         [self setS3:[[AmazonS3Client alloc] initWithAccessKey:[self s3Key] withSecretKey:[self s3Secret]]];
         
-        [[self s3] setTimeout: 999999999];
+        [[self s3] setTimeout: 500];
     }
     return self;
 }
@@ -137,8 +137,7 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
     if(!self.isCancelled) {
         [self setIsCancelled:YES];
         [self.queue cancelAllOperations];
-        [self.outstandingPartNumbers removeAllObjects];
-        //[self abortUpload];
+        [self abortUpload];
     }
 }
 
