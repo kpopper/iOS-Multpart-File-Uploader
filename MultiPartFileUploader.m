@@ -59,7 +59,11 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
 - (void)dealloc
 {
     [_outstandingPartNumbers removeAllObjects];
-    [_queue cancelAllOperations];
+    [[self.queue operations] enumerateObjectsUsingBlock:^(id obj, NSUInteger index, BOOL* stop) {
+        if ([obj isKindOfClass:[PartUploadTask class]] && [obj delegate]==self) {
+            [obj cancel];
+        }
+    }];
 }
 
 - (BOOL)uploadFileAtUrl:(NSURL *)filePathUrl operationQueue:(NSOperationQueue *)queue delegate:(id<MultiPartFileUploaderDelegate>)delegate
@@ -136,7 +140,11 @@ const int PART_SIZE = (5 * 1024 * 1024); // 5MB is the smallest part size allowe
 {
     if(!self.isCancelled) {
         [self setIsCancelled:YES];
-        [self.queue cancelAllOperations];
+        [[self.queue operations] enumerateObjectsUsingBlock:^(id obj, NSUInteger index, BOOL* stop) {
+            if ([obj isKindOfClass:[PartUploadTask class]] && [obj delegate]==self) {
+                [obj cancel];
+            }
+        }];
         [self abortUpload];
     }
 }
