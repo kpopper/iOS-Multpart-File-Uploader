@@ -33,14 +33,6 @@
     return self;
 }
 
-- (void)dealloc
-{
-    _delegate = nil;
-    [_data release];
-    [_s3 release];
-    [_upload release];
-    [super dealloc];
-}
 
 - (void)start
 {
@@ -132,7 +124,7 @@
 {
     [self finish];
 
-    if( [self delegate] )
+    if( [self delegate] && [[self delegate] respondsToSelector:@selector(partUploadTaskDidFail:)])
     {
         [[self delegate] partUploadTaskDidFail:self];
     }
@@ -149,8 +141,11 @@
 
 - (void)request:(AmazonServiceRequest *)request didSendData:(NSInteger)bytesWritten totalBytesWritten:(NSInteger)totalBytesWritten totalBytesExpectedToWrite:(NSInteger)totalBytesExpectedToWrite
 {
-    // We cannot cancel this request so there's no point processing the cancelled state here
-    // Instead we return finished when finished and let the controller abort the overall upload
+    if(self.isCancelled) {
+        [request cancel];
+        [self finish];
+        return;
+    }
     
     float percentage = (float)totalBytesWritten / (float)totalBytesExpectedToWrite;
     if( ![self isSignificantIncrease:percentage] )
