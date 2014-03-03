@@ -38,8 +38,12 @@
 {
     if ([self isCancelled] == YES)
     {
-        NSLog(@"** OPERATION CANCELED **");
+        NSLog(@"** OPERATION CANCELLED **");
         [self finish];
+        if( [self delegate] && [[self delegate] respondsToSelector:@selector(partUploadTaskDidFail:)])
+        {
+            [[self delegate] partUploadTaskDidFail:self];
+        }
         return;
     }
     
@@ -144,6 +148,10 @@
     if(self.isCancelled) {
         [request cancel];
         [self finish];
+        if( [self delegate] && [[self delegate] respondsToSelector:@selector(partUploadTaskDidFail:)])
+        {
+            [[self delegate] partUploadTaskDidFail:self];
+        }
         return;
     }
     
